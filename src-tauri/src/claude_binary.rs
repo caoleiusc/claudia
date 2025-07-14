@@ -224,9 +224,14 @@ fn discover_system_installations() -> Vec<ClaudeInstallation> {
 
 /// Try using the 'which' command to find Claude
 fn try_which_command() -> Option<ClaudeInstallation> {
-    debug!("Trying 'which claude' to find binary...");
+    debug!("Trying to find 'claude' in PATH...");
 
-    match Command::new("which").arg("claude").output() {
+    #[cfg(target_os = "windows")]
+    let command_name = "where";
+    #[cfg(not(target_os = "windows"))]
+    let command_name = "which";
+
+    match Command::new(command_name).arg("claude").output() {
         Ok(output) if output.status.success() => {
             let output_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
@@ -234,17 +239,24 @@ fn try_which_command() -> Option<ClaudeInstallation> {
                 return None;
             }
 
-            // Parse aliased output: "claude: aliased to /path/to/claude"
-            let path = if output_str.starts_with("claude:") && output_str.contains("aliased to") {
-                output_str
+            // On Windows, `where` can return multiple lines, we'll take the first one.
+            let path_str = output_str.lines().next().unwrap_or("").trim();
+
+            // Parse aliased output on Unix-like systems
+            #[cfg(not(target_os = "windows"))]
+            let path = if path_str.starts_with("claude:") && path_str.contains("aliased to") {
+                path_str
                     .split("aliased to")
                     .nth(1)
                     .map(|s| s.trim().to_string())
             } else {
-                Some(output_str)
+                Some(path_str.to_string())
             }?;
 
-            debug!("'which' found claude at: {}", path);
+            #[cfg(target_os = "windows")]
+            let path = Some(path_str.to_string())?;
+
+            debug!("Found 'claude' at: {}", path);
 
             // Verify the path exists
             if !PathBuf::from(&path).exists() {

@@ -1,4 +1,7 @@
 <div align="center">
+  <p>
+    <b><a href="README.zh-CN.md">简体中文</a></b>
+  </p>
   <img src="https://github.com/user-attachments/assets/92fd93ed-e71b-4b94-b270-50684323dd00" alt="Claudia Logo" width="120" height="120">
 
   <a href="https://claudiacode.com"><h1>Claudia</h1></a>
